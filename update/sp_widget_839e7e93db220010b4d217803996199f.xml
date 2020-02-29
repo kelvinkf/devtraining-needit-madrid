@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[function(spUtil) {
+  /* widget controller */
+  var c = this;
+	c.addRecord = function(){
+		var resp = grecaptcha.getResponse();
+		if (!resp){
+			spUtil.addErrorMessage("Please check the recaptcha.");
+		}
+		else {
+			c.server.get({
+				action: "add_record",
+				requested_for: c.data.requested_for,
+				short_description: c.data.short_description,
+				google: resp
+			}).then(function(response){
+				if (response.data.recaptcha.success){
+					c.data = {};
+					grecaptcha.reset();
+				}
+				else{
+					spUtil.addErrorMessage("You're a bot!");
+				}
+			});
+		}
+		
+		
+	}
+}]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>true</has_preview>
+        <id>needit_form</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>NeedIt Form</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {
+  /* populate the 'data' object */
+  /* e.g., data.table = $sp.getValue('table'); */
+	if (input && input.action === "add_record"){
+		//var r = new sn_ws.RESTMessageV2('GoogleRecaptcha', 'get');
+		var r = new sn_ws.RESTMessageV2('x_58872_needit.GoogleRecaptcha', 'Default GET');
+		r.setStringParameter('resp', input.google);
+		var response = r.execute();
+		data.recaptcha = JSON.parse(response.getBody());
+		if (data.recaptcha.success){
+			var gr = new GlideRecord('x_58872_needit_needit');
+			gr.newRecord();
+			
+			gr.short_description = input.short_description;
+			
+			var gd = new GlideDate(); 
+			gd.setValue('2020-10-01');
+			gr.u_when_needed = gd;
+			gr.u_what_needed = 'Legal 1';
+			gr.u_request_type = 'Legal';
+			
+			var gr_user = new GlideRecord('sys_user');
+			gr_user.addQuery('name', input.requested_for);
+			gr_user.query();
+			
+			if (gr_user.next()){
+				gr.u_requested_for = gr_user.sys_id + '';
+				gr.u_requested_for_email = gr_user.email;
+				gr.insert();
+			}
+		}
+	}
+	
+	
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2020-01-30 09:55:26</sys_created_on>
+        <sys_id>839e7e93db220010b4d217803996199f</sys_id>
+        <sys_mod_count>21</sys_mod_count>
+        <sys_name>NeedIt Form</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sp_widget_839e7e93db220010b4d217803996199f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2020-01-30 16:48:08</sys_updated_on>
+        <template><![CDATA[<div>
+<form>
+	<div class="form-group">
+    <label for="requested_for">Requested for:</label>
+  	<input class="form-control" ng-model="c.data.requested_for">
+  </div>
+	<div class="form-group">
+    <label for="short_description">Short Description:</label>
+  	<input class="form-control" ng-model="c.data.short_description">
+  </div>
+<!--  
+  <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+-->
+	<div class="g-recaptcha" data-sitekey="6LeoT9QUAAAAAK4GKTFWHU0mlXYXtDXgXeNqEiEO"></div>
+  
+  <input class="btn btn-primary btn-block" ng-click="c.addRecord()" type="submit" value="Add wish">
+</form>
+</div>]]></template>
+    </sp_widget>
+</record_update>
